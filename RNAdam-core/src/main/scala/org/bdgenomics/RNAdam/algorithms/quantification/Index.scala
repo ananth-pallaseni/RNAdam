@@ -65,7 +65,7 @@ object Index extends Serializable with Logging {
    * @return Returns a list of kmers contained in Transcript
    *
    */
-  private[quantification] def extractKmers(transcript: Transcript,
+  private[quantification] def extractKmersMethod(transcript: Transcript,
                                            kmerLength: Int,
                                            referenceFile: ReferenceFile): Iterable[String] = {
     val sequence = Extract.time {
@@ -75,6 +75,10 @@ object Index extends Serializable with Logging {
       sequence.sliding(kmerLength).toIterable
     }
   }
+
+  private[quantification] val extractKmers = extractKmersMethod _
+
+
 
   /**
    * Given an RDD of transcripts, this method finds the k-mer equivalence classes. K-mer
@@ -93,12 +97,12 @@ object Index extends Serializable with Logging {
                                                      kmerLength: Int,
                                                      referenceFile: ReferenceFile): (RDD[(String, Long)], RDD[(Long, Iterable[String])]) = {
     // Broadcast variable representing the reference file:
-    //val refFile = transcripts.context.broadcast(referenceFile)
+    val refFile = transcripts.context.broadcast(referenceFile)
 
     // RDD of (list of kmers in eq class, equivalence class ID)
     val kmersToClasses = GenerateClasses.time {
       transcripts.flatMap(t => {
-        val kmers = extractKmers(t, kmerLength, referenceFile)
+        val kmers = extractKmers(t, kmerLength, refFile.value)
         kmers.map(k => ((t.id, k), 1))
       }).foldByKey(0)(_ + _)
         .map(v => ((v._1._1, v._2), v._1._2))
