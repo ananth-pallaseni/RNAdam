@@ -102,12 +102,17 @@ object Index extends Serializable with Logging {
     // RDD of (list of kmers in eq class, equivalence class ID)
     val kmersToClasses = GenerateClasses.time {
       transcripts.flatMap(t => {
-        val kmers = extractKmers(t, kmerLength, refFile.value)
+        val sequence = Extract.time {
+          refFile.value.extract(t.region)
+        }
+        val kmers = SplitKmers.time {
+          sequence.sliding(kmerLength).toIterable
+        }
         kmers.map(k => ((t.id, k), 1))
-      }).foldByKey(0)(_ + _)
+      }).reduceByKey(_ + _)
         .map(v => ((v._1._1, v._2), v._1._2))
         .groupByKey()
-        .map(v => v._2)
+        .map(v => v._2) 
         .zipWithIndex()
     }
 
