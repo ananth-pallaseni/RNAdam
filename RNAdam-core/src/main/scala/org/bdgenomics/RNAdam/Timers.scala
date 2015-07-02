@@ -25,6 +25,7 @@ import org.bdgenomics.utils.instrumentation.Metrics
 private[RNAdam] object Timers extends Metrics {
 
   // Indexing
+  val Broadcast = timer("Broadcasting Reference File")
   val Extract = timer("Extracting Transcript from Reference")
   val SplitKmers = timer("Splitting k-mers from Transcript")
   val GenerateClasses = timer("Generating Equivalence Classes")

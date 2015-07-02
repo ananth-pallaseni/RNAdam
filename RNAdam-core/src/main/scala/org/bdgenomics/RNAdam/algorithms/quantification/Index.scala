@@ -97,13 +97,15 @@ object Index extends Serializable with Logging {
                                                      kmerLength: Int,
                                                      referenceFile: ReferenceFile): (RDD[(String, Long)], RDD[(Long, Iterable[String])]) = {
     // Broadcast variable representing the reference file:
-    //val refFile = transcripts.context.broadcast(referenceFile)
+    val refFile = Broadcast.time {
+      transcripts.context.broadcast(referenceFile)
+    }
 
     // RDD of (list of kmers in eq class, equivalence class ID)
     val kmersToClasses = GenerateClasses.time {
       transcripts.flatMap(t => {
         val sequence = Extract.time {
-          referenceFile.value.extract(t.region)
+          refFile.value.extract(t.region)
         }
         val kmers = SplitKmers.time {
           sequence.sliding(kmerLength).toIterable
