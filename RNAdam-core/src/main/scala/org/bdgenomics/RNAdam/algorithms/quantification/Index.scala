@@ -55,6 +55,33 @@ object Index extends Serializable with Logging {
     findEquivalenceClasses(transcripts, kmerLength, referenceFile)
   }
 
+<<<<<<< HEAD
+=======
+  /**
+   * Given a transcript, length and 2BitFile, this method extracts kmers of the specified
+   * length from the transcript
+   *
+   * @param transcript A Transcript object
+   * @param kmerLength The length of kmers to extract
+   * @param referenceFile The ReferenceFile representing the chromosome
+   * @return Returns a list of kmers contained in Transcript
+   *
+   */
+  private[quantification] def extractKmersMethod(transcript: Transcript,
+                                           kmerLength: Int,
+                                           referenceFile: ReferenceFile): Iterable[String] = {
+    val sequence = Extract.time {
+      referenceFile.extract(transcript.region)
+    }
+    SplitKmers.time {
+      sequence.sliding(kmerLength).toIterable
+    }
+  }
+>>>>>>> origin/test
+
+  private[quantification] val extractKmers = extractKmersMethod _
+
+
 
   /**
    * Given an RDD of transcripts, this method finds the k-mer equivalence classes. K-mer
@@ -73,11 +100,13 @@ object Index extends Serializable with Logging {
                                                      kmerLength: Int,
                                                      referenceFile: ReferenceFile): (RDD[(String, Long)], RDD[(Long, Iterable[String])]) = {
     // Broadcast variable representing the reference file:
-    val refFile = transcripts.context.broadcast(referenceFile)
+    val refFile = Broadcast.time {
+      transcripts.context.broadcast(referenceFile)
+    }
 
     // RDD of (list of kmers in eq class, equivalence class ID)
     val kmersToClasses = GenerateClasses.time {
-      transcripts.flatMap(t => {
+      val kmersAndTranscript = KmersAndTranscript.time { transcripts.flatMap(t => {
         val sequence = Extract.time {
           refFile.value.extract(t.region)
         }
@@ -85,11 +114,13 @@ object Index extends Serializable with Logging {
           sequence.sliding(kmerLength).toIterable
         }
         kmers.map(k => ((t.id, k), 1))
-      }).reduceByKey(_ + _)
-        .map(v => ((v._1._1, v._2), v._1._2))
-        .groupByKey()
-        .map(v => v._2)
-        .zipWithIndex()
+      }) }
+
+      val kmersByCount = CollectingKmersByCount.time { kmersAndTranscript.reduceByKey(_ + _) }
+      val sortByTranscript = SortByTranscript.time { kmersByCount.map(v => ((v._1._1, v._2), v._1._2)) }
+      val kmersByTranscript = CollectingKmersByTranscript.time { sortByTranscript.groupByKey() }
+      val eqClasses = DistillingEqClasses.time { kmersByTranscript.map(v => v._2) }
+      val numberedEqClasses = NumberingEqClasses.time { eqClasses.zipWithIndex() }
     }
 
     GenerateIndices.time {
