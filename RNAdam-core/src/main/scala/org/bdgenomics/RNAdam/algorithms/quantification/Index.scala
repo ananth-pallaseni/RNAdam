@@ -55,31 +55,6 @@ object Index extends Serializable with Logging {
     findEquivalenceClasses(transcripts, kmerLength, referenceFile)
   }
 
-<<<<<<< HEAD
-=======
-  /**
-   * Given a transcript, length and 2BitFile, this method extracts kmers of the specified
-   * length from the transcript
-   *
-   * @param transcript A Transcript object
-   * @param kmerLength The length of kmers to extract
-   * @param referenceFile The ReferenceFile representing the chromosome
-   * @return Returns a list of kmers contained in Transcript
-   *
-   */
-  private[quantification] def extractKmersMethod(transcript: Transcript,
-                                           kmerLength: Int,
-                                           referenceFile: ReferenceFile): Iterable[String] = {
-    val sequence = Extract.time {
-      referenceFile.extract(transcript.region)
-    }
-    SplitKmers.time {
-      sequence.sliding(kmerLength).toIterable
-    }
-  }
->>>>>>> origin/test
-
-  private[quantification] val extractKmers = extractKmersMethod _
 
 
 
