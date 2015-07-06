@@ -121,6 +121,7 @@ object Index extends Serializable with Logging {
       val kmersByTranscript = CollectingKmersByTranscript.time { sortByTranscript.groupByKey() }
       val eqClasses = DistillingEqClasses.time { kmersByTranscript.map(v => v._2) }
       val numberedEqClasses = NumberingEqClasses.time { eqClasses.zipWithIndex() }
+      numberedEqClasses
     }
 
     GenerateIndices.time {
