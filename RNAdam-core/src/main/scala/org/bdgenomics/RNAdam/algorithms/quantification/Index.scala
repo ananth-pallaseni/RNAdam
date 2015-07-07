@@ -25,6 +25,7 @@ import org.bdgenomics.formats.avro.NucleotideContigFragment
 import org.bdgenomics.adam.models.{ Exon, Transcript }
 import org.bdgenomics.RNAdam.Timers._
 import org.bdgenomics.adam.util.{ TwoBitFile, ReferenceFile }
+import scala.util.hashing.MurmurHash3
 
 object Index extends Serializable with Logging {
 
@@ -95,7 +96,7 @@ object Index extends Serializable with Logging {
       val sortByTranscript = SortByTranscript.time { kmersByCount.map(v => ((v._1._1, v._2), v._1._2)) }
       val kmersByTranscript = CollectingKmersByTranscript.time { sortByTranscript.groupByKey() }
       val eqClasses = DistillingEqClasses.time { kmersByTranscript.map(v => v._2) }
-      val numberedEqClasses = NumberingEqClasses.time { eqClasses.zipWithUniqueId() }
+      val numberedEqClasses = NumberingEqClasses.time { eqClasses.map(v => (v, v.hashCode().toLong)) }
       numberedEqClasses
     }
 
