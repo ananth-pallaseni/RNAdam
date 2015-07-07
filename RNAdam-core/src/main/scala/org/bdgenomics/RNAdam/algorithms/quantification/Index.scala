@@ -95,7 +95,7 @@ object Index extends Serializable with Logging {
       val sortByTranscript = SortByTranscript.time { kmersByCount.map(v => ((v._1._1, v._2), v._1._2)) }
       val kmersByTranscript = CollectingKmersByTranscript.time { sortByTranscript.groupByKey() }
       val eqClasses = DistillingEqClasses.time { kmersByTranscript.map(v => v._2) }
-      val numberedEqClasses = NumberingEqClasses.time { eqClasses.zipWithIndex() }
+      val numberedEqClasses = NumberingEqClasses.time { eqClasses.zipWithUniqueId() }
       numberedEqClasses
     }
 
