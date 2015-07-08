@@ -76,14 +76,6 @@ class Index(protected val args: IndexArgs) extends BDGSparkCommand[IndexArgs] wi
     }
 
     // map to avro classes and save indices
-    SavingKmers.time {
-      kmerMap.map(kv => {
-        KmerToClass.newBuilder()
-          .setKmer(kv._1)
-          .setEquivalenceClass(kv._2)
-          .build()
-      }).saveAsParquet(args.output + "_kmers")
-    }
     SavingClasses.time {
       classMap.map(kv => {
         ClassContents.newBuilder()
@@ -92,5 +84,14 @@ class Index(protected val args: IndexArgs) extends BDGSparkCommand[IndexArgs] wi
           .build()
       }).saveAsParquet(args.output + "_classes")
     }
+    SavingKmers.time {
+      kmerMap.map(kv => {
+        KmerToClass.newBuilder()
+          .setKmer(kv._1)
+          .setEquivalenceClass(kv._2)
+          .build()
+      }).saveAsParquet(args.output + "_kmers")
+    }
+    
   }
 }
