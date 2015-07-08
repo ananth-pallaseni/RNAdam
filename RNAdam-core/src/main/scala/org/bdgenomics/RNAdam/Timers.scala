@@ -28,7 +28,8 @@ private[RNAdam] object Timers extends Metrics {
   val LoadingTwoBit = timer("Loading Two Bit File")
   val LoadingGenes = timer("Loading gene descriptions")
   val Indexing = timer("Indexing k-mers")
-  val Saving = timer("Saving index")
+  val SavingKmers = timer("Saving index - kmer map")
+  val SavingClasses = timer("Saving index - class map")
 
   // Indexing
   val Broadcast = timer("Broadcasting Reference File")
