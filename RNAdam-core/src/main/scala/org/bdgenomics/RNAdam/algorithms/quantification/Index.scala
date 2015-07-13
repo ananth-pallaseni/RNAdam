@@ -56,9 +56,6 @@ object Index extends Serializable with Logging {
     findEquivalenceClasses(transcripts, kmerLength, referenceFile)
   }
 
-
-
-
   /**
    * Given an RDD of transcripts, this method finds the k-mer equivalence classes. K-mer
    * equivalence classes represent k-mers that show up with equal abundance across several
@@ -82,15 +79,17 @@ object Index extends Serializable with Logging {
 
     // RDD of (list of kmers in eq class, equivalence class ID)
     val kmersToClasses = GenerateClasses.time {
-      val kmersAndTranscript = KmersAndTranscript.time { transcripts.flatMap(t => {
-        val sequence = Extract.time {
-          refFile.value.extract(t.region)
-        }
-        val kmers = SplitKmers.time {
-          sequence.sliding(kmerLength).toIterable
-        }
-        kmers.map(k => ((t.id, k), 1))
-      }) }
+      val kmersAndTranscript = KmersAndTranscript.time {
+        transcripts.flatMap(t => {
+          val sequence = Extract.time {
+            refFile.value.extract(t.region)
+          }
+          val kmers = SplitKmers.time {
+            sequence.sliding(kmerLength).toIterable
+          }
+          kmers.map(k => ((t.id, k), 1))
+        })
+      }
 
       val kmersByCount = CollectingKmersByCount.time { kmersAndTranscript.reduceByKey(_ + _) }
       val sortByTranscript = SortByTranscript.time { kmersByCount.map(v => ((v._1._1, v._2), v._1._2)) }

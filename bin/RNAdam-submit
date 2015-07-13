@@ -54,6 +54,7 @@ fi
   --conf spark.kryoserializer.buffer.mb=4 \
   --conf spark.kryo.referenceTracking=true \
   --conf spark.executor.memory=${RNADAM_EXECUTOR_MEMORY:-4g} \
+  --conf spark.executor.extraJavaOptions="-agentpath:~/yjp-2015-build-15066/bin/linux-x86-64/libyjpagent.so" \
   ${RNADAM_OPTS:- } \
   --driver-memory ${RNADAM_DRIVER_MEMORY:-4g} \
   --jars "$RNADAM_JARS" \

@@ -37,7 +37,7 @@ private[RNAdam] object Timers extends Metrics {
   val SplitKmers = timer("Splitting k-mers from Transcript")
   val GenerateClasses = timer("Generating Equivalence Classes")
   val GenerateIndices = timer("Mapping Equivalence Classes to Indices")
-  
+
   // Additional Indexing Timers
   val KmersAndTranscript = timer("Sorting Kmers By Transcript")
   val CollectingKmersByCount = timer("Collecting kmers by count (ReduceByKey)")

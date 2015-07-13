@@ -92,6 +92,6 @@ class Index(protected val args: IndexArgs) extends BDGSparkCommand[IndexArgs] wi
           .build()
       }).saveAsParquet(args.output + "_kmers")
     }
-    
+
   }
 }
