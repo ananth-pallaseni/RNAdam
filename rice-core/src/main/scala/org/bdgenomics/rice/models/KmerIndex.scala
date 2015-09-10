@@ -38,10 +38,10 @@ trait KmerIndex extends Serializable {
 }
 
 case class IndexMap(kmerLength: Int,
-                    kmersToCounts: Map[Long, Map[String, Long]]) extends KmerIndex {
+                    kmersToCounts: Map[(Long, Boolean), Map[String, Long]]) extends KmerIndex {
 
   def getKmerLength: Int = kmerLength
 
-  def getTranscripts(kmer: CanonicalKmer): Map[String, Long] = kmersToCounts(kmer.longHash)
+  def getTranscripts(kmer: CanonicalKmer): Map[String, Long] = kmersToCounts((kmer.longHash, kmer.isOriginal))
 
 }
