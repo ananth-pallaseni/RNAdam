@@ -18,7 +18,7 @@
 package org.bdgenomics.rice.models
 
 import org.bdgenomics.adam.models.Transcript
-import java.io.{ObjectInputStream, FileInputStream}
+import java.io.{ ObjectInputStream, FileInputStream }
 
 object TranscriptMap {
 
@@ -26,7 +26,7 @@ object TranscriptMap {
    * Loads a map of transcripts from disk.
    */
   def apply(filepath: String): Map[String, Transcript] = {
-    val in = new ObjectInputStream( new FileInputStream(filepath) )
+    val in = new ObjectInputStream(new FileInputStream(filepath))
     val mapping = in.readObject().asInstanceOf[Map[String, Transcript]]
     in.close()
     mapping

@@ -17,7 +17,7 @@
  */
 package org.bdgenomics.rice.cli
 
-import java.io.{File, ObjectOutputStream, FileOutputStream}
+import java.io.{ File, ObjectOutputStream, FileOutputStream }
 import org.apache.spark.{ Logging, SparkContext }
 import org.apache.spark.rdd.MetricsContext._
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -50,8 +50,8 @@ class IndexArgs extends Args4jBase {
   var output: String = null
 }
 
-class Index(protected val args: IndexArgs) extends BDGSparkCommand[IndexArgs] with Logging { 
-  val companion = Index 
+class Index(protected val args: IndexArgs) extends BDGSparkCommand[IndexArgs] with Logging {
+  val companion = Index
 
   def run(sc: SparkContext) {
     // load gene annotations and transform to contig fragments

@@ -18,12 +18,12 @@
 package org.bdgenomics.rice.models
 
 import net.fnothaft.ananas.models.CanonicalKmer
-import java.io.{ObjectInputStream, FileInputStream}
+import java.io.{ ObjectInputStream, FileInputStream }
 
 object KmerIndex extends Serializable {
 
   def apply(filename: String): KmerIndex = {
-    val in = new ObjectInputStream( new FileInputStream(filename) )
+    val in = new ObjectInputStream(new FileInputStream(filename))
     val mapping = in.readObject().asInstanceOf[Map[Long, Map[String, Long]]]
     in.close()
     IndexMap(16, mapping)
@@ -38,10 +38,10 @@ trait KmerIndex extends Serializable {
 }
 
 case class IndexMap(kmerLength: Int,
-					kmersToCounts: Map[Long, Map[String, Long]]) extends KmerIndex {
+                    kmersToCounts: Map[Long, Map[String, Long]]) extends KmerIndex {
 
-	def getKmerLength : Int = kmerLength
+  def getKmerLength: Int = kmerLength
 
-	def getTranscripts(kmer: CanonicalKmer): Map[String, Long] = kmersToCounts(kmer.longHash)
+  def getTranscripts(kmer: CanonicalKmer): Map[String, Long] = kmersToCounts(kmer.longHash)
 
 }

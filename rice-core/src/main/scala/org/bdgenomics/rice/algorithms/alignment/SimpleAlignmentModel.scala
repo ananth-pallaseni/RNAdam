@@ -22,8 +22,8 @@ import org.bdgenomics.rice.models.KmerIndex
 
 object SimpleAlignmentModel extends AlignmentModel {
 
-  def likelihood(count: Long, readLength: Long, kmerSize: Long = 16L) : Double = {
-	return count.toDouble / (readLength - kmerSize + 1)
+  def likelihood(count: Long, readLength: Long, kmerSize: Long = 16L): Double = {
+    return count.toDouble / (readLength - kmerSize + 1)
   }
 
   /**
@@ -32,14 +32,14 @@ object SimpleAlignmentModel extends AlignmentModel {
   def processRead(iter: Iterator[CanonicalKmer],
                   kmerIndex: KmerIndex): Map[String, Double] = {
 
-  	val ar = iter.toArray // So we can use this more than once
+    val ar = iter.toArray // So we can use this more than once
 
-  	val kLength = ar(0).kmerLength // kmerLength
-  	val readLength = ar.map( c => 1 ).reduce(_ + _)  + kLength - 1 // Length of read
-  	
-  	ar.flatMap( c => kmerIndex.getTranscripts(c) )  // Iter[ (TranscriptId, Count) ]
-  	  .map( c => (c._1, 1L) )						// Iter[ (TranscriptId, 1L)]
-  	  .groupBy(_._1)								// Map[ TranscriptId -> Array(TranscriptId, 1) ]
-  	  .map( t => (t._1, likelihood(t._2.size, readLength, kLength) ) ) // Map[ TranscriptId -> likelihood ]
+    val kLength = ar(0).kmerLength // kmerLength
+    val readLength = ar.map(c => 1).reduce(_ + _) + kLength - 1 // Length of read
+
+    ar.flatMap(c => kmerIndex.getTranscripts(c)) // Iter[ (TranscriptId, Count) ]
+      .map(c => (c._1, 1L)) // Iter[ (TranscriptId, 1L)]
+      .groupBy(_._1) // Map[ TranscriptId -> Array(TranscriptId, 1) ]
+      .map(t => (t._1, likelihood(t._2.size, readLength, kLength))) // Map[ TranscriptId -> likelihood ]
   }
 }

@@ -25,7 +25,7 @@ import org.bdgenomics.adam.models.Transcript
 import org.bdgenomics.formats.avro.NucleotideContigFragment
 import org.bdgenomics.rice.Timers._
 import org.apache.spark.graphx.Graph
-import net.fnothaft.ananas.debruijn.{ColoredDeBruijnGraph, ColoredKmerVertex}
+import net.fnothaft.ananas.debruijn.{ ColoredDeBruijnGraph, ColoredKmerVertex }
 import net.fnothaft.ananas.models.ContigFragment
 
 object Index extends Serializable with Logging {
@@ -37,7 +37,7 @@ object Index extends Serializable with Logging {
    * @param transcripts An RDD containing transcripts
    * @return Returns a Graph representing a colored De Bruijn graph of kmers
    */
-  def apply(contigFragments: RDD[ContigFragment], transcripts: RDD[Transcript]): (Map[Long, Map[String, Long]], Map[String, Transcript]) = {
+  def apply(contigFragments: RDD[ContigFragment], transcripts: RDD[Transcript]): (Map[(Long, Boolean), Map[String, Long]], Map[String, Transcript]) = {
 
     val graph = createGraph(contigFragments)
     val vertexMapping = computeVertexMapping(graph)
@@ -59,30 +59,46 @@ object Index extends Serializable with Logging {
   }
 
   /**
-   * Creates a mapping between kmers and the set of transcripts they appear in. 
-   * 
+   * Creates a mapping between kmers and the set of transcripts they appear in.
+   *
    * @param graph A colored de bruijn graph representing kmers read from transcripts
    * @return Returns a Mapping from kmers to transcripts and the abundance of kmers in the transcripts
    */
-  def computeVertexMapping(graph: Graph[ColoredKmerVertex, Unit]): Map[Long, Map[String, Long]] = {
+  def computeVertexMapping(graph: Graph[ColoredKmerVertex, Unit]): Map[(Long, Boolean), Map[String, Long]] = {
 
-    VertexMapping.time { 
-      graph.vertices                                                                  // RDD[ kmerHash, ColoredKmerVertex ]                         
-           .map(v => (v._1, { v._2.forwardTerminals.toList.map( t => (t._1, 1L) ) ++ 
-                              v._2.forwardStronglyConnected.toList.map( t => (t._1._1, 1L) ) ++
-                              v._2.reverseTerminals.toList.map( t => (t._1, 1L) ) ++
-                              v._2.reverseStronglyConnected.toList.map( t => (t._1._1, 1L) ) } // RDD[ kmerHash, Set[ color, 1 ] ]
-                                .groupBy(_._1)                                        // RDD[ kmerHash, Map[ color -> Seq( color, 1 )] ]
-                                .map(_._2.reduce( (a, b) => (a._1, a._2 + b._2) ))) ) // RDD[ kmerHash, Map[ color -> num occurrences] ]                                                                               
-           .collect().toMap                                                           // Map[ kmerHash, Map[color, num occurrences] ]
+    VertexMapping.time {
+      val hashRdd: RDD[((Long, Boolean, String), Long)] = graph.vertices // RDD[ kmerHash, ColoredKmerVertex ]                         
+        .flatMap(v => {
+          val forward = if (v._2.forwardTerminals.nonEmpty || v._2.forwardStronglyConnected.nonEmpty) {
+            v._2.forwardTerminals.toList.map(t => ((v._1, true, t._1), 1L)) ++
+              v._2.forwardStronglyConnected.toList.map(t => ((v._1, true, t._1._1), 1L))
+          } else {
+            Seq.empty
+          }
+          val reverse = if (v._2.reverseTerminals.nonEmpty || v._2.reverseStronglyConnected.nonEmpty) {
+            v._2.reverseTerminals.toList.map(t => ((v._1, false, t._1), 1L)) ++
+              v._2.reverseStronglyConnected.toList.map(t => ((v._1, false, t._1._1), 1L))
+          } else {
+            Seq.empty
+          }
+          forward ++ reverse
+        }) // RDD[ kmerHash, Set[ color, 1 ] ]
 
-
-    }     
+      val countsPerKmerPerTranscript: RDD[((Long, Boolean), (String, Long))] = hashRdd.reduceByKey(_ + _)
+        .map(q => {
+          val ((hash, strand, transcript), number) = q
+          ((hash, strand), (transcript, number))
+        })
+      val transcriptCountsPerKmer: RDD[((Long, Boolean), Map[String, Long])] = countsPerKmerPerTranscript.combineByKey(v => Map(v),
+        (c, v) => c + v,
+        (c1, c2) => c1 ++ c2)
+      transcriptCountsPerKmer.collectAsMap().toMap
+    }
   }
 
-  /** 
+  /**
    * Creates a Mapping between transcript IDs and Transcripts
-   * 
+   *
    * @param transcripts RDD of Transcripts
    * @return Returns a mapping between transcript IDs and transcript objects
    */
