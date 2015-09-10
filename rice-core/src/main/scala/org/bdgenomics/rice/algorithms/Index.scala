@@ -67,7 +67,7 @@ object Index extends Serializable with Logging {
   def computeVertexMapping(graph: Graph[ColoredKmerVertex, Unit]): Map[(Long, Boolean), Map[String, Long]] = {
 
     VertexMapping.time {
-      val hashRdd: RDD[((Long, Boolean, String), Long)] = graph.vertices // RDD[ kmerHash, ColoredKmerVertex ]                         
+      val hashRdd: RDD[((Long, Boolean, String), Long)] = graph.vertices                        
         .flatMap(v => {
           val forward = if (v._2.forwardTerminals.nonEmpty || v._2.forwardStronglyConnected.nonEmpty) {
             v._2.forwardTerminals.toList.map(t => ((v._1, true, t._1), 1L)) ++
@@ -82,17 +82,19 @@ object Index extends Serializable with Logging {
             Seq.empty
           }
           forward ++ reverse
-        }) // RDD[ kmerHash, Set[ color, 1 ] ]
+        }) // RDD[ (kmerHash, forward/reverse, color), 1L ]
 
       val countsPerKmerPerTranscript: RDD[((Long, Boolean), (String, Long))] = hashRdd.reduceByKey(_ + _)
         .map(q => {
           val ((hash, strand, transcript), number) = q
           ((hash, strand), (transcript, number))
-        })
+        }) // RDD[ (kmerHash, forward/reverse) , (color, count) ]
+
       val transcriptCountsPerKmer: RDD[((Long, Boolean), Map[String, Long])] = countsPerKmerPerTranscript.combineByKey(v => Map(v),
         (c, v) => c + v,
-        (c1, c2) => c1 ++ c2)
-      transcriptCountsPerKmer.collectAsMap().toMap
+        (c1, c2) => c1 ++ c2) // RDD[ (kmerHash, forward/reverse) , Map[color -> count] ]
+
+      transcriptCountsPerKmer.collectAsMap().toMap //Map[ (kmerHash, forward/reverse) -> Map[color -> count] ]
     }
   }
 

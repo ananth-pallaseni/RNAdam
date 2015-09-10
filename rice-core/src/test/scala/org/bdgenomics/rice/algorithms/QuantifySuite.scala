@@ -119,14 +119,13 @@ class QuantifySuite extends riceFunSuite {
     val repeat = "AAAAAAAAAAAAAAAA"
     val repeatHash = IntMer(repeat).longHash
     val repeatOriginality = IntMer(repeat).isOriginal
-    println("%s -> %#016x <- %s".format(repeat, repeatHash, repeatOriginality))
+    
     val seq1Hashes = IntMer.fromSequence(seq1).map(i => i.longHash)
     val seq2Hashes = IntMer.fromSequence(seq2).map(i => i.longHash)
 
     val (imap, tmap) = Index(frags, transcripts)
 
     // With a kmer length of 16, we should have 33 + 18 kmers of which 4 are repeats of AAAAAAAAAAAAAAAA
-    imap.foreach(kv => println("%#016x, %s -> %s".format(kv._1._1, kv._1._2, kv._2)))
     assert(imap.size == 33 + 18 - 4 + 1)
     imap.foreach(v => {
       val ((kHash, kStrand), kMap) = v
@@ -159,7 +158,7 @@ class QuantifySuite extends riceFunSuite {
     })
   }
 
-  /*  sparkTest("Simple Test of Mapper") {
+    sparkTest("Simple Test of Mapper") {
     val testSeq = "ACACTGTGGGTACACTACGAGA"
     val ar = Array({
       AlignmentRecord.newBuilder()
@@ -239,5 +238,5 @@ class QuantifySuite extends riceFunSuite {
     // so likelihood = 7 / (22 - 16 + 1) = 1
     assert(m(0)._2("ctg") == 1D)
   }
-  */
+  
 }
