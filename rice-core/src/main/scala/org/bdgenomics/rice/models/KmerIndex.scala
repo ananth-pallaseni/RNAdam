@@ -24,7 +24,7 @@ object KmerIndex extends Serializable {
 
   def apply(filename: String): KmerIndex = {
     val in = new ObjectInputStream(new FileInputStream(filename))
-    val mapping = in.readObject().asInstanceOf[Map[Long, Map[String, Long]]]
+    val mapping = in.readObject().asInstanceOf[Map[(Long, Boolean), Map[String, Long]]]
     in.close()
     IndexMap(16, mapping)
   }
