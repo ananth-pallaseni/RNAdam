@@ -96,7 +96,7 @@ class QuantifySuite extends riceFunSuite {
     val imers = testSeq.sliding(16).map(s => IntMer(s))
 
     assert(imap.size == 7) // 7 kmers of length 16
-    imap.foreach(println)
+    
     assert(imers.forall(i => imap((i.longHash, i.isOriginal))("ctg") == 1))
 
     // Test transcript mapping
@@ -129,7 +129,7 @@ class QuantifySuite extends riceFunSuite {
     assert(imap.size == 33 + 18 - 4 + 1)
     imap.foreach(v => {
       val ((kHash, kStrand), kMap) = v
-      println("on " + v)
+      
       // Assert that the kmer exists in the sequences we have presented
       assert(seq1Hashes.contains(kHash) || seq2Hashes.contains(kHash))
 
