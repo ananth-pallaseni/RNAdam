@@ -31,11 +31,11 @@ import net.fnothaft.ananas.models.ContigFragment
 object Index extends Serializable with Logging {
 
   /**
-   * Computes an index, given a set of Nucleotide Contig Fragments. An index provides a de bruijn graph of kmers
+   * Computes an index, given a set of Nucleotide Contig Fragments. An index provides a mapping from kmers to the transcripts they are found in 
    *
    * @param contigFragments An RDD containing contigFragments.
    * @param transcripts An RDD containing transcripts
-   * @return Returns a Graph representing a colored De Bruijn graph of kmers
+   * @return Returns two mappings representing the Index of a sequence.
    */
   def apply(contigFragments: RDD[ContigFragment], transcripts: RDD[Transcript]): (Map[(Long, Boolean), Map[String, Long]], Map[String, Transcript]) = {
 

@@ -88,6 +88,25 @@ class QuantifySuite extends riceFunSuite {
     Index(frag, transcripts)
   }
 
+  /**
+   * Computes the correct results for a run of Index upon a set of fragments described by the 
+   * sequences and transcripts given.
+   *
+   * @param sequences A list of Strings which describe the base sequences of the contig fragments we are 
+   *                  emulating
+   * @param transcriptNames A list of the names of the transcripts corresponding to the sequences in the 
+   *                    previous parameter.
+   * @return Returns A manually computed index result
+   */
+  def actualResults(sequences: Array[String], transcriptNames: Array[String], kmerLength: Int = 16) = {
+    val combined = sequences.zip(transcriptNames) // [ (sequence, transcriptName)]
+    val intmers = combined.map(tup => (IntMer.fromSequence(tup._1), tup._2)) // [ ( [Intmers] , transcriptName ) ]
+    val kmers = intmers.flatMap(tup => { tup._1.map(imer => ((imer.longHash, imer.isOriginal, {if(imer.isOriginal) imer.toCanonicalString else imer.toAntiCanonicalString}), tup._2) )} ) //[ ((hash, orig), transcriptName) ]
+    val partialMap = kmers.groupBy(_._1) // Map[ (hash, orig) -> [ ((hash, orig), transcripts)] ]
+    val idx = partialMap.mapValues(v => v.groupBy(w => w._2).mapValues(_.size)) // Map[ (hash, orig) -> Map[ transcriptName -> count ] ]
+    idx
+  }
+
   sparkTest("Simple Test of Index") {
     val testSeq = "ACACTGTGGGTACACTACGAGA"
     val (imap, tmap) = createTestIndex(testSeq)
@@ -98,6 +117,9 @@ class QuantifySuite extends riceFunSuite {
     assert(imap.size == 7) // 7 kmers of length 16
     
     assert(imers.forall(i => imap((i.longHash, i.isOriginal))("ctg") == 1))
+
+    println("Testing ACtual Values")
+    actualResults(Array(testSeq), Array("ctg")).foreach(v => println(v))
 
     // Test transcript mapping
     assert(tmap("one").id == "one")
@@ -124,6 +146,15 @@ class QuantifySuite extends riceFunSuite {
     val seq2Hashes = IntMer.fromSequence(seq2).map(i => i.longHash)
 
     val (imap, tmap) = Index(frags, transcripts)
+
+    ///// Using Actual Index Results /////
+    val actual = actualResults(Array(seq1, seq2), Array(name1, name2))
+    println("Actual Results")
+    actual.foreach(a => println(a))
+
+    println("Returned Results")
+    imap.foreach(i => println(i))
+    ///// End Using ACtual Index Results /////
 
     // With a kmer length of 16, we should have 33 + 18 kmers of which 4 are repeats of AAAAAAAAAAAAAAAA
     assert(imap.size == 33 + 18 - 4 + 1)
@@ -158,7 +189,7 @@ class QuantifySuite extends riceFunSuite {
     })
   }
 
-    sparkTest("Simple Test of Mapper") {
+  sparkTest("Simple Test of Mapper") {
     val testSeq = "ACACTGTGGGTACACTACGAGA"
     val ar = Array({
       AlignmentRecord.newBuilder()
