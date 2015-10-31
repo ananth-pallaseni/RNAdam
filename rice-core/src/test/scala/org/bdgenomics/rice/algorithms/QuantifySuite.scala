@@ -136,14 +136,14 @@ class QuantifySuite extends riceFunSuite {
       val inRecieved = recieved.keySet.contains(key)
       !inRecieved
     })
-    val missingMsg = "Kmers missing from Index:\n" + missingKmers.map(k => k.toString + "\n").reduce(_+_) 
+    val missingMsg = "Kmers missing from Index:\n" + if (missingKmers.size > 0) missingKmers.map(k => k.toString + "\n").reduce(_+_) else "None\n"
 
     // Check if there were kmers added
     val addedKmers = recieved.keySet.filter(k => {
       val inExpected = formattedExpected.contains(k)
       !inExpected
     })
-    val addedMsg = "Kmers added to Index (that shouldn't be present):\n" + addedKmers.map(k => k.toString + "\n").reduce(_+_) 
+    val addedMsg = "Kmers added to Index (that shouldn't be present):\n" + if (addedKmers.size > 0) addedKmers.map(k => k.toString + "\n").reduce(_+_) else "None\n"
 
     val correct = sizesMatch && kmersPresent
     if (correct) {
