@@ -155,7 +155,8 @@ class QuantifySuite extends riceFunSuite {
     println("\n Returned Results")
     imap.foreach(i => println(i))
 
-    println("\n \n Comparisons")
+    println("\n \nComparisons")
+    println("ACtual Size: " + actual.size.toString + "   , IMAP Size: " + imap.size.toString)
     val equality = actual.keySet == imap.keySet
     val missing = {actual.keySet.filter(k => imap.keySet.contains((k._1, k._2)))}.map(k => k.toString + "\n").reduce(_+_)
     val eqMsg = if (equality) "Kmers in Actual match kmers in IMAP" else "Kmers in Actual DO NOT match kmers in IMAP. \n Missing Kmers: \n" + missing
