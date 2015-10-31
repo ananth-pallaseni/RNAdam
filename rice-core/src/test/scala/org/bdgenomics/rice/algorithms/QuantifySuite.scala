@@ -146,7 +146,7 @@ class QuantifySuite extends riceFunSuite {
     val addedMsg = if (addedKmers.size > 0) "Kmers added to Index (that shouldn't be present):\n" + addedKmers.map(k => k.toString + "\n").reduce(_+_) else ""
 
     val correct = sizesMatch && kmersPresent
-    if (correct) {
+    if (!correct) {
       println("Index was incorrect")
       println(sizeMsg)
       println(addedMsg)
