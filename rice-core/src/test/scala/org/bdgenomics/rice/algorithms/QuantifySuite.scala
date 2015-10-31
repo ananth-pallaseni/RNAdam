@@ -92,7 +92,7 @@ class QuantifySuite extends riceFunSuite {
   // Compute actual Index and the expected results for Index based on the input sequences
   def createIndex(sequences: Array[String]): (Map[(Long, Boolean), Map[String, Long]], Map[(Long, Boolean, String), Map[String, Long]]) = {
     // Name all the sequences in order
-    val names = Array(for (i <- 0 to sequences.size) yield "seq" + i.toString)
+    val names = {for (i <- 0 to sequences.size) yield "seq" + i.toString}.toArray
 
     // Create a one contig fragment per sequence
     val frags = sc.parallelize( sequences.zip(names).map(c => createContigFragment(c._1, c._2)) )
