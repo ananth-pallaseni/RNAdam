@@ -98,7 +98,7 @@ class QuantifySuite extends riceFunSuite {
    *                    previous parameter.
    * @return Returns A manually computed index result
    */
-  def actualResults(sequences: Array[String], transcriptNames: Array[String], kmerLength: Int = 16) = {
+  def expectedResults(sequences: Array[String], transcriptNames: Array[String], kmerLength: Int = 16) = {
     val combined = sequences.zip(transcriptNames) // [ (sequence, transcriptName)]
     val intmers = combined.map(tup => (IntMer.fromSequence(tup._1), tup._2)) // [ ( [Intmers] , transcriptName ) ]
     val kmers = intmers.flatMap(tup => { tup._1.map(imer => ((imer.longHash, imer.isOriginal, {if(imer.isOriginal) imer.toCanonicalString else imer.toAntiCanonicalString}), tup._2) )} ) //[ ((hash, orig), transcriptName) ]
@@ -148,19 +148,27 @@ class QuantifySuite extends riceFunSuite {
     val (imap, tmap) = Index(frags, transcripts)
 
     ///// Using Actual Index Results /////
-    val actual = actualResults(Array(seq1, seq2), Array(name1, name2))
+    val expected = expectedResults(Array(seq1, seq2), Array(name1, name2))
     println("Actual Results")
-    actual.foreach(a => println(a))
+    expected.foreach(a => println(a))
 
     println("\n Returned Results")
     imap.foreach(i => println(i))
 
     println("\n \nComparisons")
-    println("ACtual Size: " + actual.size.toString + "   , IMAP Size: " + imap.size.toString)
-    val equality = actual.keySet == imap.keySet
-    val missing = {actual.keySet.filter(k => imap.keySet.contains((k._1, k._2)))}.map(k => k.toString + "\n").reduce(_+_)
-    val eqMsg = if (equality) "Kmers in Actual match kmers in IMAP" else "Kmers in Actual DO NOT match kmers in IMAP. \n Missing Kmers: \n" + missing
+    println("Expected Size: " + expected.size.toString + "   , IMAP Size: " + imap.size.toString)
+    val equality = expected.keySet == imap.keySet
+    // Find the kmers that are in Expected but not in the Recieved
+    val missing = expected.keySet.filter(k => !{imap.keySet.contains((k._1, k._2))})
+    val missingMsg = missing.map(k => k.toString + "\n").reduce(_+_)
+    val eqMsg = if (equality) "Kmers in Expected match kmers in IMAP" else "Kmers in Expected DO NOT match kmers in IMAP. \n Missing Kmers: \n" + missingMsg
     println(eqMsg)
+
+    // Assert that the expected number of kmers matches the recieved number of kmers
+    assert(expected.size == imap.size)
+
+    // Assert that the kmers in the expected set match those in the recieved set
+    assert(equality)
 
     ///// End Using ACtual Index Results /////
 
