@@ -80,12 +80,12 @@ class QuantifySuite extends riceFunSuite {
    *                    previous parameter.
    * @return Returns A manually computed index result
    */
-  def expectedResults(sequences: Array[String], transcriptNames: Array[String], kmerLength: Int = 16) = {
+  def expectedResults(sequences: Array[String], transcriptNames: Array[String], kmerLength: Int = 16): Map[(Long, Boolean, String), Map[String, Long]] = {
     val combined = sequences.zip(transcriptNames) // [ (sequence, transcriptName)]
     val intmers = combined.map(tup => (IntMer.fromSequence(tup._1), tup._2)) // [ ( [Intmers] , transcriptName ) ]
     val kmers = intmers.flatMap(tup => { tup._1.map(imer => ((imer.longHash, imer.isOriginal, {if(imer.isOriginal) imer.toCanonicalString else imer.toAntiCanonicalString}), tup._2) )} ) //[ ((hash, orig), transcriptName) ]
     val partialMap = kmers.groupBy(_._1) // Map[ (hash, orig) -> [ ((hash, orig), transcripts)] ]
-    val idx = partialMap.mapValues(v => v.groupBy(w => w._2).mapValues(_.size)) // Map[ (hash, orig) -> Map[ transcriptName -> count ] ]
+    val idx = partialMap.mapValues(v => v.groupBy(w => w._2).mapValues(_.size.toLong)) // Map[ (hash, orig) -> Map[ transcriptName -> count ] ]
     idx
   }
 
