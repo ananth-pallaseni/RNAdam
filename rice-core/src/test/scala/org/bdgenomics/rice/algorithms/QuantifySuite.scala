@@ -56,6 +56,7 @@ class QuantifySuite extends riceFunSuite {
       Option(fragment.getFragmentStartPosition).fold(0)(_.toInt))
   }
 
+  // Create a fake contig fragment from the sequece specified. 
   def createContigFragment(sequence: String, name: String): ContigFragment = {
     val ncf = NucleotideContigFragment.newBuilder()
       .setContig(Contig.newBuilder()
@@ -67,25 +68,6 @@ class QuantifySuite extends riceFunSuite {
       .build()
 
     buildFromNCF(ncf)
-  }
-
-  def createTestIndex(sequence: String = "ACACTGTGGGTACACTACGAGA"): (Map[(Long, Boolean), Map[String, Long]], Map[String, Transcript]) = {
-    val ncf = NucleotideContigFragment.newBuilder()
-      .setContig(Contig.newBuilder()
-        .setContigName("ctg")
-        .build())
-      .setFragmentNumber(0)
-      .setNumberOfFragmentsInContig(1)
-      .setFragmentSequence(sequence)
-      .build()
-
-    val frag = sc.parallelize(Seq(buildFromNCF(ncf)))
-
-    val tx = Seq(Transcript("one", Seq("one"), "gene1", true, Iterable[Exon](), Iterable[CDS](), Iterable[UTR]()),
-      Transcript("two", Seq("two"), "gene1", true, Iterable[Exon](), Iterable[CDS](), Iterable[UTR]()))
-    val transcripts = sc.parallelize(tx)
-
-    Index(frag, transcripts)
   }
 
   /**
@@ -107,8 +89,89 @@ class QuantifySuite extends riceFunSuite {
     idx
   }
 
+  // Compute actual Index and the expected results for Index based on the input sequences
+  def createIndex(sequences: Array[String]): (Map[(Long, Boolean), Map[String, Long]], Map[(Long, Boolean, String), Map[String, Long]]) = {
+    // Name all the sequences in order
+    val names = for (i <- 0 to sequences.size) yield "seq" + i.toString
+
+    // Create a one contig fragment per sequence
+    val frags = sc.parallelize( sequences.zip(names).map(c => createContigFragment(c._1, c._2)) )
+
+    // Create an arbitrary set of transcripts (only required as an ancillary argument to Index)
+    val transcripts = sc.parallelize( Seq(Transcript("one", Seq("one"), "gene1", true, Iterable[Exon](), Iterable[CDS](), Iterable[UTR]()),
+      Transcript("two", Seq("two"), "gene1", true, Iterable[Exon](), Iterable[CDS](), Iterable[UTR]())) )
+
+    // Compute Index
+    val (imap, tmap) = Index(frags, transcripts)
+
+    // Compute expected results
+    val expected = expectedResults(sequences, names)
+
+    imap, expected
+  }
+
+  // Compare the results of Index with expected results
+  def compareResults(recieved: Map[(Long, Boolean), Map[String, Long]], expected: Map[(Long, Boolean, String), Map[String, Long]]) : Boolean = {
+    // Make a set of the kmers in Expected that matches the format of the kmers in Recieved:
+    val formattedExpected = expected.keySet.map(k => (k._1, k._2))
+
+    // Check Sizes
+    val recievedSize = recieved.size 
+    val expectedSize = expected.size
+    val sizesMatch = recievedSize == expectedSize
+    // Edge case if either Recieved or Expected is empty
+    val sizeMsg = "Recieved Index of Size: " + recievedSize.toString + ", but expected size of " + expectedSize.toString
+    if (recievedSize == 0 || expectedSize == 0) {
+      println("Index size was zero")
+      println(sizeMsg)
+      return false
+    }
+
+    // Check if all kmers in expected are present in recieved 
+    val kmersPresent = recieved.keySet == formattedExpected
+
+    // Check if there are kmers missing
+    val missingKmers = expected.keySet.filter(k => {
+      val key = (k._1, k._2)
+      val inRecieved = recieved.keySet.contains(key)
+      !inRecieved
+    })
+    val missingMsg = "Kmers missing from Index:\n" + missingKmers.map(k => k.toString + "\n").reduce(_+_) 
+
+    // Check if there were kmers added
+    val addedKmers = actual.keySet.filter(k => {
+      val inExpected = formattedExpected.contains(k)
+      !inExpected
+    })
+    val addedMsg = "Kmers added to Index (that shouldn't be present):\n" + addedKmers.map(k => k.toString + "\n").reduce(_+_) 
+
+    val correct = sizesMatch && kmersPresent
+    if (correct) {
+      println("Index was incorrect")
+      println(sizeMsg)
+      println(addedMsg)
+      println("\n")
+      println("All Kmers in Recieved Index:")
+      recieved.foreach(println(_))
+      println("All expected Kmers")
+      expected.foreach(println(_))
+    }
+
+    // Check if counts on the transcripts are correct:
+    // val incorrectCounts = 
+
+    
+  }
+
+  // For a given set of input sequences, test if Index produces the correct output
+  def testOfIndex(sequences: Array[String]): Boolean = {
+    val (recieved, expected) = createIndex(sequences)
+    val correct = compareResults(recieved, expected)
+    correct
+  }
+
   sparkTest("Simple Test of Index") {
-    val testSeq = "ACACTGTGGGTACACTACGAGA"
+    /*val testSeq = "ACACTGTGGGTACACTACGAGA"
     val (imap, tmap) = createTestIndex(testSeq)
 
     // Test kmer mapping
@@ -118,16 +181,19 @@ class QuantifySuite extends riceFunSuite {
     
     assert(imers.forall(i => imap((i.longHash, i.isOriginal))("ctg") == 1))
 
-    println("Testing ACtual Values")
-    actualResults(Array(testSeq), Array("ctg")).foreach(v => println(v))
 
     // Test transcript mapping
     assert(tmap("one").id == "one")
-    assert(tmap("two").id == "two")
+    assert(tmap("two").id == "two")*/
   }
 
   sparkTest("Less Simple Test of Index") {
-    // Two sequences with repeats of kmer AAAAAAAAAAAAAAAA
+    val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
+    val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
+    val correct = testOfIndex(List(seq1, seq2))
+    assert(correct)
+    
+    /*// Two sequences with repeats of kmer AAAAAAAAAAAAAAAA
     val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
     val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
     val name1 = "seq1"
@@ -138,18 +204,10 @@ class QuantifySuite extends riceFunSuite {
       Transcript("two", Seq("two"), "gene1", true, Iterable[Exon](), Iterable[CDS](), Iterable[UTR]()))
     val transcripts = sc.parallelize(tx)
 
-    val repeat = "AAAAAAAAAAAAAAAA"
-    val repeatHash = IntMer(repeat).longHash
-    val repeatOriginality = IntMer(repeat).isOriginal
-    
-    val seq1Hashes = IntMer.fromSequence(seq1).map(i => i.longHash)
-    val seq2Hashes = IntMer.fromSequence(seq2).map(i => i.longHash)
-
     val (imap, tmap) = Index(frags, transcripts)
 
-    ///// Using Actual Index Results /////
     val expected = expectedResults(Array(seq1, seq2), Array(name1, name2))
-    println("Actual Results")
+    println("Expected Results")
     expected.foreach(a => println(a))
 
     println("\n Returned Results")
@@ -161,49 +219,14 @@ class QuantifySuite extends riceFunSuite {
     // Find the kmers that are in Expected but not in the Recieved
     val missing = expected.keySet.filter(k => !{imap.keySet.contains((k._1, k._2))})
     val missingMsg = missing.map(k => k.toString + "\n").reduce(_+_)
-    val eqMsg = if (equality) "Kmers in Expected match kmers in IMAP" else "Kmers in Expected DO NOT match kmers in IMAP. \n Missing Kmers: \n" + missingMsg
+    val eqMsg = if (equality) "Kmers in Expected match kmers in IMAP" else "Kmers in Expected DO NOT match kmers in IMAP. \nMissing Kmers: \n" + missingMsg
     println(eqMsg)
 
     // Assert that the expected number of kmers matches the recieved number of kmers
-    assert(expected.size == imap.size)
+    assert(imap.size == expected.size)
 
     // Assert that the kmers in the expected set match those in the recieved set
-    assert(equality)
-
-    ///// End Using ACtual Index Results /////
-
-    // Old tests
-    /*// With a kmer length of 16, we should have 33 + 18 kmers of which 4 are repeats of AAAAAAAAAAAAAAAA
-    assert(imap.size == 33 + 18 - 4 + 1)
-    imap.foreach(v => {
-      val ((kHash, kStrand), kMap) = v
-      
-      // Assert that the kmer exists in the sequences we have presented
-      assert(seq1Hashes.contains(kHash) || seq2Hashes.contains(kHash))
-
-      // Check if the kmer is the repeat
-      if (kHash == repeatHash && kStrand == repeatOriginality) {
-        // Should have two values (one for each sequence the repeat was found in)
-        assert(kMap.size == 2)
-
-        // The two values should correspond to the two sequence names
-        val names = kMap.map(m => m._1).toList
-        assert(names.contains(name1) && names.contains(name2))
-
-        // Each sequence should have two occurrences each
-        assert(kMap(name1) == 2 && kMap(name2) == 2)
-      } else {
-        // If the kmer is not the repeat, then it should only have one value in map
-        assert(kMap.size == 1)
-
-        // The value should correspond to one of the two sequence names
-        val names = kMap.toList(0)
-        assert(names._1 == name1 || names._1 == name2)
-
-        // The sequence should have one occurrence
-        assert(names._2 == 1)
-      }
-    })*/
+    assert(equality)*/
   }
 
   sparkTest("Simple Test of Mapper") {
