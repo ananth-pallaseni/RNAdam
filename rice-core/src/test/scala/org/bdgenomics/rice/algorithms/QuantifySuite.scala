@@ -92,7 +92,7 @@ class QuantifySuite extends riceFunSuite {
   // Compute actual Index and the expected results for Index based on the input sequences
   def createIndex(sequences: Array[String]): (Map[(Long, Boolean), Map[String, Long]], Map[(Long, Boolean, String), Map[String, Long]]) = {
     // Name all the sequences in order
-    val names = for (i <- 0 to sequences.size) yield "seq" + i.toString
+    val names = Array(for (i <- 0 to sequences.size) yield "seq" + i.toString)
 
     // Create a one contig fragment per sequence
     val frags = sc.parallelize( sequences.zip(names).map(c => createContigFragment(c._1, c._2)) )
@@ -107,7 +107,7 @@ class QuantifySuite extends riceFunSuite {
     // Compute expected results
     val expected = expectedResults(sequences, names)
 
-    imap, expected
+    (imap, expected)
   }
 
   // Compare the results of Index with expected results
@@ -139,7 +139,7 @@ class QuantifySuite extends riceFunSuite {
     val missingMsg = "Kmers missing from Index:\n" + missingKmers.map(k => k.toString + "\n").reduce(_+_) 
 
     // Check if there were kmers added
-    val addedKmers = actual.keySet.filter(k => {
+    val addedKmers = recieved.keySet.filter(k => {
       val inExpected = formattedExpected.contains(k)
       !inExpected
     })
@@ -156,6 +156,8 @@ class QuantifySuite extends riceFunSuite {
       println("All expected Kmers")
       expected.foreach(println(_))
     }
+
+    correct
 
     // Check if counts on the transcripts are correct:
     // val incorrectCounts = 
@@ -190,9 +192,9 @@ class QuantifySuite extends riceFunSuite {
   sparkTest("Less Simple Test of Index") {
     val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
     val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
-    val correct = testOfIndex(List(seq1, seq2))
+    val correct = testOfIndex(Array(seq1, seq2))
     assert(correct)
-    
+
     /*// Two sequences with repeats of kmer AAAAAAAAAAAAAAAA
     val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
     val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
@@ -229,7 +231,7 @@ class QuantifySuite extends riceFunSuite {
     assert(equality)*/
   }
 
-  sparkTest("Simple Test of Mapper") {
+  /*sparkTest("Simple Test of Mapper") {
     val testSeq = "ACACTGTGGGTACACTACGAGA"
     val ar = Array({
       AlignmentRecord.newBuilder()
@@ -308,6 +310,6 @@ class QuantifySuite extends riceFunSuite {
     // All 7 kmers in this read came from transcript "Ctg", readLength = 22, kmerLength = 16
     // so likelihood = 7 / (22 - 16 + 1) = 1
     assert(m(0)._2("ctg") == 1D)
-  }
+  }*/
   
 }
