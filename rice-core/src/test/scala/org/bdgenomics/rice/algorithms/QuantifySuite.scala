@@ -145,12 +145,14 @@ class QuantifySuite extends riceFunSuite {
     })
     val addedMsg = if (addedKmers.size > 0) "Kmers added to Index (that shouldn't be present):\n" + addedKmers.map(k => k.toString + "\n").reduce(_+_) else "No added kmers"
 
-    val correct = sizesMatch && kmersPresent
+    val kmersCorrect = sizesMatch && kmersPresent
+    val kmerMsg = sizeMsg + "\n" + missingMsg + "\n" + addedMsg + "\n"
+    /*val correct = sizesMatch && kmersPresent
     if (!correct) {
       println("Index was incorrect")
       println(sizeMsg)
+      println(missingMsg)
       println(addedMsg)
-      println("\n")
       println("All Kmers in Recieved Index:")
       recieved.foreach(println(_))
       println("\n")
@@ -158,10 +160,54 @@ class QuantifySuite extends riceFunSuite {
       expected.foreach(println(_))
     }
 
-    correct
+    correct*/
 
     // Check if counts on the transcripts are correct:
-    // val incorrectCounts = 
+    val transcriptsCheck = expected.keySet.map(e => {
+      // For each expected kmer, check if it exists in recieved
+      val key = (e._1, e._2)
+      val keyInRecieved = recieved.contains(key)
+      if (keyInRecieved) {
+        // If the kmer does exist, then check if the expected transcripts match the recieved ones
+        val recMap = recieved.get(key)
+        val expMap = expected.get(e)
+        val transcriptsCorrect = expMap.keySet.map(t => {
+          val transcriptInRecieved = recMap.contains(t)
+          if (transcriptInRecieved) {
+            // If the transcript exists, then check if the count is accurate
+            val recCount = recMap.get(t)
+            val expCount = expMap.get(t)
+            if (recCount == expCount) {
+              (true, "")
+            }
+            else {
+              val transcriptsMsg = "Count for transcript=" + t.toString + " for kmer=" + e.toString + " was " recCount + ". It should be " + expCount.toString
+              (false, transcriptsMsg)
+            }
+          }
+          else {
+            val transcriptsMsg = t.toString + " not part of Map for " + e.toString + ". It should be."
+            (false, transcriptsMsg)
+          }
+          })
+        transcriptsCorrect.map(t => (t._1, t._2 + "\n")).reduce((t1, t2) => (t1._1 && t2._1, t1._2 + t2._2))
+      }
+      else {
+        val transcriptsMsg = e.toString + " not in Index. It should be."
+        (false, transcriptsMsg)
+      }
+      })
+    val (transcriptsCountsCorrect, transcriptsMsg) = transcriptsCheck.map(t => (t._1, t._2 + "\n")).reduce((t1, t2) => (t1._1 && t2._1, t1._2 + t2._2))
+
+    val correct = kmersCorrect && transcriptCountsCorrect
+    val msg = kmerMsg + "\n" + transcriptsMsg
+    if (correct) {
+      true
+    }
+    else {
+      println(msg)
+      false
+    }
 
     
   }
@@ -193,8 +239,8 @@ class QuantifySuite extends riceFunSuite {
   sparkTest("Less Simple Test of Index") {
     val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
     val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
-    val correct = testOfIndex(Array(seq1, seq2))
-    assert(correct)
+    val testPassed = testOfIndex(Array(seq1, seq2))
+    assert(testPassed)
 
     /*// Two sequences with repeats of kmer AAAAAAAAAAAAAAAA
     val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
