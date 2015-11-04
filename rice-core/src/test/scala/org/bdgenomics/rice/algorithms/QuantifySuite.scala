@@ -219,7 +219,7 @@ class QuantifySuite extends riceFunSuite {
     correct
   }
 
-  sparkTest("Simple Test of Index") {
+  sparkTest("Simple Test of Index") { 
     /*val testSeq = "ACACTGTGGGTACACTACGAGA"
     val (imap, tmap) = createTestIndex(testSeq)
 
@@ -241,41 +241,12 @@ class QuantifySuite extends riceFunSuite {
     val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
     val testPassed = testOfIndex(Array(seq1, seq2))
     assert(testPassed)
+  }
 
-    /*// Two sequences with repeats of kmer AAAAAAAAAAAAAAAA
-    val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
-    val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
-    val name1 = "seq1"
-    val name2 = "seq2"
-    val frags = sc.parallelize(Seq(createContigFragment(seq1, name1), createContigFragment(seq2, name2)))
-
-    val tx = Seq(Transcript("one", Seq("one"), "gene1", true, Iterable[Exon](), Iterable[CDS](), Iterable[UTR]()),
-      Transcript("two", Seq("two"), "gene1", true, Iterable[Exon](), Iterable[CDS](), Iterable[UTR]()))
-    val transcripts = sc.parallelize(tx)
-
-    val (imap, tmap) = Index(frags, transcripts)
-
-    val expected = expectedResults(Array(seq1, seq2), Array(name1, name2))
-    println("Expected Results")
-    expected.foreach(a => println(a))
-
-    println("\n Returned Results")
-    imap.foreach(i => println(i))
-
-    println("\n \nComparisons")
-    println("Expected Size: " + expected.size.toString + "   , IMAP Size: " + imap.size.toString)
-    val equality = expected.keySet == imap.keySet
-    // Find the kmers that are in Expected but not in the Recieved
-    val missing = expected.keySet.filter(k => !{imap.keySet.contains((k._1, k._2))})
-    val missingMsg = missing.map(k => k.toString + "\n").reduce(_+_)
-    val eqMsg = if (equality) "Kmers in Expected match kmers in IMAP" else "Kmers in Expected DO NOT match kmers in IMAP. \nMissing Kmers: \n" + missingMsg
-    println(eqMsg)
-
-    // Assert that the expected number of kmers matches the recieved number of kmers
-    assert(imap.size == expected.size)
-
-    // Assert that the kmers in the expected set match those in the recieved set
-    assert(equality)*/
+  sparkTest("Index - Test to make sure kmers with Canonicality=False make it through") {
+    val seq1 = "TTTTTTTTTTTTTTTT"
+    val testPassed = testOfIndex(Array(seq1))
+    assert(testPassed)
   }
 
   /*sparkTest("Simple Test of Mapper") {
