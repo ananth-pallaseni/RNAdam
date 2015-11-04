@@ -183,7 +183,7 @@ class QuantifySuite extends riceFunSuite {
         (false, transcriptsMsg)
       }
       })
-    val (transcriptsCountsCorrect, transcriptsMsg) = transcriptsCheck.map(t => (t._1, t._2 + "\n")).reduce((t1, t2) => (t1._1 && t2._1, t1._2 + t2._2))
+    val (transcriptsCountsCorrect, transcriptsMsg) = transcriptsCheck.map(t => (t._1, if(t._2.size > 0) t._2 + "\n" else "")).reduce((t1, t2) => (t1._1 && t2._1, t1._2 + t2._2))
 
     val correct = kmersCorrect && transcriptsCountsCorrect
     val msg = "############ Kmer Statistics ############\n" + kmerMsg + "\n############ Transcript Statistics ############\n" + transcriptsMsg
