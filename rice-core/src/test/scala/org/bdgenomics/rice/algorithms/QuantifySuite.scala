@@ -181,7 +181,7 @@ class QuantifySuite extends riceFunSuite {
               (true, "")
             }
             else {
-              val transcriptsMsg = "Count for transcript=" + t.toString + " for kmer=" + e.toString + " was " recCount.toString + ". It should be " + expCount.toString
+              val transcriptsMsg = "Count for transcript=" + t.toString + " for kmer=" + e.toString + " was " + recCount.toString + ". It should be " + expCount.toString
               (false, transcriptsMsg)
             }
           }
