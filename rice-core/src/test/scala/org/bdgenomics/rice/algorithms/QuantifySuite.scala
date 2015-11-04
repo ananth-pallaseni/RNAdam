@@ -247,7 +247,13 @@ class QuantifySuite extends riceFunSuite {
     val seq1 = "TTTTTTTTTTTTTTTT"
     val testPassed = testOfIndex(Array(seq1))
     assert(testPassed)
+
+    val seq1 = "TTTTTTTTTTTTTTTT"
+    val seq2 = "AAAAAAAAAAAAAAAA"
+    val testPassed = testOfIndex(Array(seq1, seq2))
+    assert(testPassed)
   }
+
 
   /*sparkTest("Simple Test of Mapper") {
     val testSeq = "ACACTGTGGGTACACTACGAGA"
