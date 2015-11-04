@@ -169,14 +169,14 @@ class QuantifySuite extends riceFunSuite {
       val keyInRecieved = recieved.contains(key)
       if (keyInRecieved) {
         // If the kmer does exist, then check if the expected transcripts match the recieved ones
-        val recMap = recieved.get(key)
-        val expMap = expected.get(e)
+        val recMap = recieved(key)
+        val expMap = expected(e)
         val transcriptsCorrect = expMap.keySet.map(t => {
           val transcriptInRecieved = recMap.contains(t)
           if (transcriptInRecieved) {
             // If the transcript exists, then check if the count is accurate
-            val recCount = recMap.get(t)
-            val expCount = expMap.get(t)
+            val recCount = recMap(t)
+            val expCount = expMap(t)
             if (recCount == expCount) {
               (true, "")
             }
