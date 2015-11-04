@@ -187,15 +187,15 @@ class QuantifySuite extends riceFunSuite {
 
     val correct = kmersCorrect && transcriptsCountsCorrect
     val msg = "############ Kmer Statistics ############\n" + kmerMsg + "\n############ Transcript Statistics ############\n" + transcriptsMsg
+    val fullDump = "Expected Results:\n" + expected.map(q => q.toString + "\n").reduce(_ + _) + "Recieved Results:\n" + recieved.map(q => q.toString + "\n").reduce(_ + _)
     if (correct) {
       true
     }
     else {
       println(msg)
+      println(fullDump)
       false
     }
-
-    
   }
 
   // For a given set of input sequences, test if Index produces the correct output
