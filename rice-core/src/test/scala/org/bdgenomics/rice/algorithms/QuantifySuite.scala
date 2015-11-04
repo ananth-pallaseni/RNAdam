@@ -147,20 +147,6 @@ class QuantifySuite extends riceFunSuite {
 
     val kmersCorrect = sizesMatch && kmersPresent
     val kmerMsg = sizeMsg + "\n" + missingMsg + "\n" + addedMsg + "\n"
-    /*val correct = sizesMatch && kmersPresent
-    if (!correct) {
-      println("Index was incorrect")
-      println(sizeMsg)
-      println(missingMsg)
-      println(addedMsg)
-      println("All Kmers in Recieved Index:")
-      recieved.foreach(println(_))
-      println("\n")
-      println("All expected Kmers")
-      expected.foreach(println(_))
-    }
-
-    correct*/
 
     // Check if counts on the transcripts are correct:
     val transcriptsCheck = expected.keySet.map(e => {
@@ -190,7 +176,7 @@ class QuantifySuite extends riceFunSuite {
             (false, transcriptsMsg)
           }
           })
-        transcriptsCorrect.map(t => (t._1, t._2 + "\n")).reduce((t1, t2) => (t1._1 && t2._1, t1._2 + t2._2))
+        transcriptsCorrect.map(t => (t._1, if(t._2.size > 0) t._2 + "\n" else "")).reduce((t1, t2) => (t1._1 && t2._1, t1._2 + t2._2))
       }
       else {
         val transcriptsMsg = e.toString + " not in Index. It should be."
