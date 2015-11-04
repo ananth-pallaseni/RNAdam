@@ -200,7 +200,7 @@ class QuantifySuite extends riceFunSuite {
     val (transcriptsCountsCorrect, transcriptsMsg) = transcriptsCheck.map(t => (t._1, t._2 + "\n")).reduce((t1, t2) => (t1._1 && t2._1, t1._2 + t2._2))
 
     val correct = kmersCorrect && transcriptsCountsCorrect
-    val msg = kmerMsg + "\n" + transcriptsMsg
+    val msg = "############ Kmer Statistics ############\n" + kmerMsg + "\n############ Transcript Statistics ############\n" + transcriptsMsg
     if (correct) {
       true
     }
@@ -234,24 +234,34 @@ class QuantifySuite extends riceFunSuite {
     // Test transcript mapping
     assert(tmap("one").id == "one")
     assert(tmap("two").id == "two")*/
+    val seq = "ACACTGTGGGTACACTACGAGA"
+    val testPassed = testOfIndex(Array(seq))
+    assert(testPassed)
   }
 
   sparkTest("Less Simple Test of Index") {
-    val seq1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
-    val seq2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
-    val testPassed = testOfIndex(Array(seq1, seq2))
-    assert(testPassed)
+    // Repeats of AAAAAAAAAAAAAAAA
+    val seq1_1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
+    val seq1_2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
+    val testPassed1 = testOfIndex(Array(seq1_1, seq1_2))
+    assert(testPassed1)
+
+    // Randomized string of length 32
+    val seq2_1 = "GGATCAAATACGGGGCCTGTGTGCTGCGACTA"
+    val seq2_2 = "ACTAGGGCCTGCATGCGAACATCCTGAACGCC"
+    val testPassed2 = testOfIndex(Array(seq2_1, seq2_2))
+    assert(testPassed2)
   }
 
   sparkTest("Index - Test to make sure kmers with Canonicality=False make it through") {
     val seq1_1 = "TTTTTTTTTTTTTTTT"
-    val testPassed = testOfIndex(Array(seq1_1))
-    assert(testPassed)
+    val testPassed1 = testOfIndex(Array(seq1_1))
+    assert(testPassed1)
 
     val seq2_1 = "TTTTTTTTTTTTTTTT"
     val seq2_2 = "AAAAAAAAAAAAAAAA"
-    val testPassed = testOfIndex(Array(seq2_1, seq2_2))
-    assert(testPassed)
+    val testPassed2 = testOfIndex(Array(seq2_1, seq2_2))
+    assert(testPassed2)
   }
 
 
