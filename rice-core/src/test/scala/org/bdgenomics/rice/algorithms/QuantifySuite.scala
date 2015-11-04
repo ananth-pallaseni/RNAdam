@@ -244,13 +244,13 @@ class QuantifySuite extends riceFunSuite {
   }
 
   sparkTest("Index - Test to make sure kmers with Canonicality=False make it through") {
-    val seq1 = "TTTTTTTTTTTTTTTT"
-    val testPassed = testOfIndex(Array(seq1))
+    val seq1_1 = "TTTTTTTTTTTTTTTT"
+    val testPassed = testOfIndex(Array(seq1_1))
     assert(testPassed)
 
-    val seq1 = "TTTTTTTTTTTTTTTT"
-    val seq2 = "AAAAAAAAAAAAAAAA"
-    val testPassed = testOfIndex(Array(seq1, seq2))
+    val seq2_1 = "TTTTTTTTTTTTTTTT"
+    val seq2_2 = "AAAAAAAAAAAAAAAA"
+    val testPassed = testOfIndex(Array(seq2_1, seq2_2))
     assert(testPassed)
   }
 
