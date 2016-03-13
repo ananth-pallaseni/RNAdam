@@ -56,7 +56,14 @@ class QuantifySuite extends riceFunSuite {
       Option(fragment.getFragmentStartPosition).fold(0)(_.toInt))
   }
 
-  // Create a fake contig fragment from the sequece specified. 
+  /**
+   * Creates a fake contig fragment from the specified sequence.
+   *
+   * @param sequence A list of Strings which describe the base sequences of the contig fragments we are 
+   *                  emulating
+   * @param name What to call the resulting contig fragment
+   * @return A ContigFragment object that represents the sequence
+   */
   def createContigFragment(sequence: String, name: String): ContigFragment = {
     val ncf = NucleotideContigFragment.newBuilder()
       .setContig(Contig.newBuilder()
@@ -78,7 +85,7 @@ class QuantifySuite extends riceFunSuite {
    *                  emulating
    * @param transcriptNames A list of the names of the transcripts corresponding to the sequences in the 
    *                    previous parameter.
-   * @return Returns A manually computed index result
+   * @return A manually computed index result
    */
   def expectedResults(sequences: Array[String], transcriptNames: Array[String], kmerLength: Int = 16): Map[(Long, Boolean, String), Map[String, Long]] = {
     val combined = sequences.zip(transcriptNames) // [ (sequence, transcriptName)]
@@ -89,6 +96,13 @@ class QuantifySuite extends riceFunSuite {
     idx
   }
 
+  /**
+   * Creates two Indexex, one using the Index function and the other by manually cutting kmers.
+   *
+   * @param sequences A list of Strings which describe the base sequences of the contig fragments we are 
+   *                  emulating
+   * @return A tuple of Indexes, one from the Index function and the other calculated manually
+   */
   // Compute actual Index and the expected results for Index based on the input sequences
   def createIndex(sequences: Array[String]): (Map[(Long, Boolean), Map[String, Long]], Map[(Long, Boolean, String), Map[String, Long]]) = {
     // Name all the sequences in order
@@ -110,7 +124,13 @@ class QuantifySuite extends riceFunSuite {
     (imap, expected)
   }
 
-  // Compare the results of Index with expected results
+  /**
+   * Compares the results of the calculated Index with the expected results
+   *
+   * @param recieved Map recieved from the Index call
+   * @param expected Manually calculated Map to compare recieved results against
+   * @return Returns True if the recieved Map is identical to the expected one, false otherwise.
+   */
   def compareResults(recieved: Map[(Long, Boolean), Map[String, Long]], expected: Map[(Long, Boolean, String), Map[String, Long]]) : Boolean = {
     // Make a set of the kmers in Expected that matches the format of the kmers in Recieved:
     val formattedExpected = expected.keySet.map(k => (k._1, k._2))
@@ -119,6 +139,7 @@ class QuantifySuite extends riceFunSuite {
     val recievedSize = recieved.size 
     val expectedSize = expected.size
     val sizesMatch = recievedSize == expectedSize
+
     // Edge case if either Recieved or Expected is empty
     val sizeMsg = "Recieved Index of Size: " + recievedSize.toString + ", but expected size of " + expectedSize.toString
     if (recievedSize == 0 || expectedSize == 0) {
@@ -198,40 +219,35 @@ class QuantifySuite extends riceFunSuite {
     }
   }
 
-  // For a given set of input sequences, test if Index produces the correct output
+  /**
+   * For a given set of input sequences, tests if Index produces the correct output
+   *
+   * @param sequences A list of Strings which describe the base sequences of the contig fragments we are 
+   *                  emulating
+   * @return Returns True if the sequences are correctly indexed, false otherwise.
+   */
   def testOfIndex(sequences: Array[String]): Boolean = {
     val (recieved, expected) = createIndex(sequences)
     val correct = compareResults(recieved, expected)
     correct
   }
 
-  sparkTest("Simple Test of Index") { 
-    /*val testSeq = "ACACTGTGGGTACACTACGAGA"
-    val (imap, tmap) = createTestIndex(testSeq)
+  sparkTest("simple sequences correctly indexed") { 
 
-    // Test kmer mapping
-    val imers = testSeq.sliding(16).map(s => IntMer(s))
-
-    assert(imap.size == 7) // 7 kmers of length 16
-    
-    assert(imers.forall(i => imap((i.longHash, i.isOriginal))("ctg") == 1))
-
-
-    // Test transcript mapping
-    assert(tmap("one").id == "one")
-    assert(tmap("two").id == "two")*/
     val seq = "ACACTGTGGGTACACTACGAGA"
     val testPassed = testOfIndex(Array(seq))
     assert(testPassed)
   }
 
-  sparkTest("Less Simple Test of Index") {
+  sparkTest("repetetive sequences correctly indexed") {
     // Repeats of AAAAAAAAAAAAAAAA
     val seq1_1 = "AAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAA"
     val seq1_2 = "AAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTT"
     val testPassed1 = testOfIndex(Array(seq1_1, seq1_2))
     assert(testPassed1)
+  }
 
+  sparkTest("random sequences correctly indexed") {
     // Randomized string of length 32
     val seq2_1 = "GGATCAAATACGGGGCCTGTGTGCTGCGACTA"
     val seq2_2 = "ACTAGGGCCTGCATGCGAACATCCTGAACGCC"
@@ -239,7 +255,7 @@ class QuantifySuite extends riceFunSuite {
     assert(testPassed2)
   }
 
-  sparkTest("Index - Test to make sure kmers with Canonicality=False make it through") {
+  sparkTest("kmers with Canonicality=False make it through") {
     val seq1_1 = "TTTTTTTTTTTTTTTT"
     val testPassed1 = testOfIndex(Array(seq1_1))
     assert(testPassed1)
@@ -249,87 +265,5 @@ class QuantifySuite extends riceFunSuite {
     val testPassed2 = testOfIndex(Array(seq2_1, seq2_2))
     assert(testPassed2)
   }
-
-
-  /*sparkTest("Simple Test of Mapper") {
-    val testSeq = "ACACTGTGGGTACACTACGAGA"
-    val ar = Array({
-      AlignmentRecord.newBuilder()
-        .setSequence(testSeq)
-        .build()
-    })
-
-    val reads = sc.parallelize(ar)
-
-    val (imap, tmap) = createTestIndex(testSeq)
-
-    val kmerIndex = IndexMap(16, imap)
-
-    val m = Mapper(reads, kmerIndex, TestAlignmentModel).collect()
-
-    // Only one read, so only one item in the map
-    assert(m.size == 1)
-
-    // The one item should map to ( "ctg" -> number of occurrences of all kmers in contig ctg = 7, as all 7 kmers are from the read)
-    assert(m.forall(v => v._2("ctg") == 7.toDouble))
-
-  }
-
-  sparkTest("Less Simple Test of Mapper") {
-    val testSeq1 = "ACACTGTGGGTACACTACGAGA"
-    val testSeq2 = "CCAGTGACTGGAAAAA"
-    val ar = Array({
-      AlignmentRecord.newBuilder()
-        .setSequence(testSeq1)
-        .build()
-    },
-      {
-        AlignmentRecord.newBuilder()
-          .setSequence(testSeq2)
-          .build()
-      })
-
-    val reads = sc.parallelize(ar)
-
-    val (imap, tmap) = createTestIndex(testSeq1 + testSeq2)
-
-    val kmerIndex = IndexMap(16, imap)
-
-    val m = Mapper(reads, kmerIndex, TestAlignmentModel).collect()
-
-    // Two reads, so two items in the map
-    assert(m.size == 2)
-
-    // Assert that readIDs are unique
-    assert(m(0)._1 != m(1)._1)
-
-    // Should have either 7 or 1 kmers per read (all kmers are from the same transcript "ctg")
-    assert(m.forall(v => { v._2("ctg") == 7.toDouble || v._2("ctg") == 1 }))
-
-    // Should record 8 kmers in total
-    assert(m(0)._2("ctg") + m(1)._2("ctg") == 8)
-
-  }
-
-  sparkTest("Testing SimpleAlignmentModel") {
-    val testSeq = "ACACTGTGGGTACACTACGAGA"
-    val ar = Array({
-      AlignmentRecord.newBuilder()
-        .setSequence(testSeq)
-        .build()
-    })
-
-    val reads = sc.parallelize(ar)
-
-    val (imap, tmap) = createTestIndex(testSeq)
-
-    val kmerIndex = IndexMap(16, imap)
-
-    val m = Mapper(reads, kmerIndex, SimpleAlignmentModel).collect()
-
-    // All 7 kmers in this read came from transcript "Ctg", readLength = 22, kmerLength = 16
-    // so likelihood = 7 / (22 - 16 + 1) = 1
-    assert(m(0)._2("ctg") == 1D)
-  }*/
   
 }

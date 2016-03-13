@@ -31,7 +31,8 @@ import net.fnothaft.ananas.models.ContigFragment
 object Index extends Serializable with Logging {
 
   /**
-   * Computes an index, given a set of Nucleotide Contig Fragments. An index provides a mapping from kmers to the transcripts they are found in 
+   * Computes an index, given a set of Nucleotide Contig Fragments. An index provides a mapping 
+   * from kmers to the transcripts they are found in 
    *
    * @param contigFragments An RDD containing contigFragments.
    * @param transcripts An RDD containing transcripts
@@ -67,34 +68,48 @@ object Index extends Serializable with Logging {
   def computeVertexMapping(graph: Graph[ColoredKmerVertex, Unit]): Map[(Long, Boolean), Map[String, Long]] = {
 
     VertexMapping.time {
-      val hashRdd: RDD[((Long, Boolean, String), Long)] = graph.vertices                        
+
+      // Convert each kmer in the graph into the tuple ( (kmerID, canonicality, transcriptItCameFrom) , 1 )
+      val kmers: RDD[((Long, Boolean, String), Long)] = graph.vertices                        
         .flatMap(v => {
+          // Grab forward kmers if they exist
           val forward = if (v._2.forwardTerminals.nonEmpty || v._2.forwardStronglyConnected.nonEmpty) {
             v._2.forwardTerminals.toList.map(t => ((v._1, true, t._1), 1L)) ++
               v._2.forwardStronglyConnected.toList.map(t => ((v._1, true, t._1._1), 1L))
           } else {
             Seq.empty
           }
+          // Grab reverse kmers if they exist
           val reverse = if (v._2.reverseTerminals.nonEmpty || v._2.reverseStronglyConnected.nonEmpty) {
             v._2.reverseTerminals.toList.map(t => ((v._1, false, t._1), 1L)) ++
               v._2.reverseStronglyConnected.toList.map(t => ((v._1, false, t._1._1), 1L))
           } else {
             Seq.empty
           }
-          forward ++ reverse
-        }) // RDD[ (kmerHash, forward/reverse, color), 1L ]
 
-      val countsPerKmerPerTranscript: RDD[((Long, Boolean), (String, Long))] = hashRdd.reduceByKey(_ + _)
-        .map(q => {
+          // Combine foward and reverse
+          forward ++ reverse
+        }) 
+
+      // Count the number of instances of each (kmerID, canonicality, transcriptItCameFrom) via reducing.
+      val counts: RDD[((Long, Boolean), (String, Long))] = kmers.reduceByKey(_ + _)
+
+      // Reorder the tuples into ( (kmerID, canonicality) , (transcriptItCameFrom, count) )
+      val reordered = counts.map( q => {
           val ((hash, strand, transcript), number) = q
           ((hash, strand), (transcript, number))
-        }) // RDD[ (kmerHash, forward/reverse) , (color, count) ]
+        })
 
-      val transcriptCountsPerKmer: RDD[((Long, Boolean), Map[String, Long])] = countsPerKmerPerTranscript.combineByKey(v => Map(v),
-        (c, v) => c + v,
-        (c1, c2) => c1 ++ c2) // RDD[ (kmerHash, forward/reverse) , Map[color -> count] ]
+      // Collect all (kmerID, canonicality) by putting all associated (transcriptItCameFrom, count) into a map
+      val collected: RDD[((Long, Boolean), Map[String, Long])] = reordered.combineByKey( v => 
+          Map(v),
+          (c, v) => c + v,
+          (c1, c2) => c1 ++ c2 
+        ) 
 
-      transcriptCountsPerKmer.collectAsMap().toMap //Map[ (kmerHash, forward/reverse) -> Map[color -> count] ]
+      // Convert the resulting rdd into a map from (kmerID, canonicality) => (transcriptItCameFrom, count)
+      collected.collectAsMap().toMap 
+
     }
   }
 
