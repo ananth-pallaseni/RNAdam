@@ -92,10 +92,10 @@ object Index extends Serializable with Logging {
         }) 
 
       // Count the number of instances of each (kmerID, canonicality, transcriptItCameFrom) via reducing.
-      val counts: RDD[((Long, Boolean), (String, Long))] = kmers.reduceByKey(_ + _)
+      val counts: RDD[((Long, Boolean, String), Long)] = kmers.reduceByKey(_ + _)
 
       // Reorder the tuples into ( (kmerID, canonicality) , (transcriptItCameFrom, count) )
-      val reordered = counts.map( q => {
+      val reordered: RDD[((Long, Boolean), (String, Long))] = counts.map( q => {
           val ((hash, strand, transcript), number) = q
           ((hash, strand), (transcript, number))
         })
